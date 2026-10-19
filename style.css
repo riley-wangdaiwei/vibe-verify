@@ -1,0 +1,117 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: #000;
+  color: #eee;
+  font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  padding: 30px 20px 90px;
+  max-width: 720px;
+  text-align: left;
+}
+a { color: #fff; }
+p { margin: 0 0 8px; }
+
+.brand { font-size: 24px; font-weight: 800; letter-spacing: 3px; }
+.tagline { color: #999; margin: 6px 0 20px; font-size: 14px; }
+
+nav { margin-bottom: 30px; }
+nav button {
+  background: none; border: none; color: #777;
+  font: inherit; font-size: 14px; text-align: left;
+  padding: 6px 12px 6px 0; cursor: pointer;
+}
+nav button:hover { color: #fff; }
+nav button.on { color: #fff; font-weight: 700; }
+
+.toolbar { margin-bottom: 24px; }
+.toolbar input, .toolbar select {
+  background: #000; border: none; border-bottom: 1px solid #333;
+  color: #eee; font: inherit; font-size: 14px;
+  padding: 6px 2px; margin: 0 14px 8px 0; max-width: 100%;
+}
+.toolbar input { width: 220px; }
+.toolbar input:focus, .toolbar select:focus { outline: none; border-bottom-color: #fff; }
+
+.card { margin: 0 0 36px; }
+.card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.meta { color: #888; font-size: 13px; margin-bottom: 8px; }
+.body-text { margin: 6px 0; }
+.label { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin: 12px 0 4px; }
+
+.x {
+  float: right; background: none; border: none; color: #555;
+  font-size: 17px; line-height: 1; cursor: pointer; padding: 0 0 10px 12px;
+}
+.x:hover { color: #fff; }
+
+.example-tag {
+  background: #fff; color: #000; font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; padding: 2px 6px; margin-left: 8px; vertical-align: 2px;
+}
+.status { color: #fff; border: 1px solid #555; font-size: 11px; padding: 1px 7px; margin-left: 8px; letter-spacing: 1px; }
+
+pre {
+  background: #0d0d0d; padding: 12px 14px; margin: 10px 0;
+  font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; color: #e8e8e8;
+}
+
+details { margin: 10px 0; }
+summary { cursor: pointer; color: #999; font-size: 14px; }
+summary:hover { color: #fff; }
+details .inner { padding: 10px 0 4px; }
+
+.opt {
+  display: block; width: 100%; text-align: left;
+  background: none; border: none; color: #ccc;
+  font: inherit; font-size: 14px; padding: 7px 0; cursor: pointer;
+}
+.opt:hover:not(:disabled) { color: #fff; }
+.opt:disabled { cursor: default; }
+.opt.right { color: #fff; font-weight: 700; }
+.opt.wrong { color: #444; text-decoration: line-through; }
+.opt.dim { color: #444; }
+
+.rate { margin-top: 10px; }
+.rate button {
+  background: none; border: 1px solid #444; color: #aaa;
+  font: inherit; font-size: 13px; padding: 5px 12px; margin-right: 8px; cursor: pointer;
+}
+.rate button:hover { color: #fff; border-color: #fff; }
+.rate button.picked { color: #000; background: #fff; border-color: #fff; }
+
+.answer { margin-top: 10px; }
+.explain { color: #bbb; margin-top: 6px; }
+
+textarea.work {
+  width: 100%; min-height: 90px; background: #0d0d0d; color: #eee;
+  border: 1px solid #2a2a2a; font: inherit; font-size: 14px;
+  padding: 10px; margin-top: 8px; resize: vertical;
+}
+textarea.work:focus { outline: none; border-color: #666; }
+.hint-text { color: #999; font-size: 14px; margin-top: 6px; }
+
+.addform { margin: 26px 0 40px; }
+.addform summary { font-size: 15px; }
+.addform label { display: block; color: #888; font-size: 12px; margin: 10px 0 0; text-transform: uppercase; letter-spacing: 1px; }
+.addform input, .addform textarea, .addform select {
+  display: block; width: 100%; background: #0d0d0d; color: #eee;
+  border: 1px solid #2a2a2a; font: inherit; font-size: 14px; padding: 8px 10px; margin: 4px 0 0;
+}
+.addform textarea { min-height: 64px; resize: vertical; }
+.addform input:focus, .addform textarea:focus, .addform select:focus { outline: none; border-color: #666; }
+.addform button.submit {
+  background: #fff; color: #000; border: none; font: inherit; font-weight: 700;
+  font-size: 14px; padding: 8px 22px; margin-top: 14px; cursor: pointer;
+}
+
+ul.plain { list-style: none; }
+ul.plain li { margin-bottom: 14px; }
+ul.plain .t { font-weight: 700; }
+ul.plain .d { color: #999; font-size: 14px; }
+
+footer { margin-top: 50px; color: #666; font-size: 13px; }
+footer p { margin-bottom: 4px; }
+
+.empty { color: #666; margin: 20px 0; }
+.count { color: #666; font-size: 13px; margin-bottom: 18px; }
