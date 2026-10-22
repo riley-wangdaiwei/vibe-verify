@@ -5,16 +5,28 @@ const LS_KEY = "vibe-verify-v1";
 
 /* Seed updates: bump SEED_VERSION whenever SEED content changes. On load,
    migrateSeeds() replaces example cards that still exist with the new seed
-   content (same id). It never resurrects cards the user deleted, and never
-   touches user-added cards. Brand-new seed ids are NOT auto-added — add
-   those via the in-app form. */
-const SEED_VERSION = 2;
+   content (same id), and adds brand-new seed ids on top. It never resurrects
+   cards the user deleted, and never touches user-added cards. New seed
+   modules arrive only when Mu adds them for one of her tasks — never bulk. */
+const SEED_VERSION = 3;
 
 /* ---------------- seed data (tagged EXAMPLE, deletable) ---------------- */
 
 const SEED = {
 seedVersion: SEED_VERSION,
 sessions: [
+{
+  id: "s4", isExample: true, track: "both", project: "Gambia Evidence Gap Explorer",
+  sessionDate: "2026-10-22", status: "completed",
+  title: "EvidenceTensor: one source of truth, two projections",
+  objective: "Understand how the Evidence Gap Explorer keeps its two maps honest: one shared tensor, two projections (Missing Evidence + Proxy Alignment).",
+  filesChanged: "src/evidence_gap/tensor.py — EvidenceTensor dataclass (records list) + project_gap() / project_proxy() + from_database() SQL JOIN; tests/test_tensor_projections.py — one test pinning that both projections share source_id.",
+  whyChosen: "Both views derive from the same records list instead of each keeping a copy. If either view built its own matrix, the two maps could disagree — which is exactly the §14 failure: View A stayed an unsearched matrix while View B showed stored alignments.",
+  decisions: "Tensor is a plain dataclass over a list of dicts, not a numpy array: no numeric tensor math exists yet, so a thin wrapper avoids a dependency and keeps the 'tensor' concept (target × population × source) without pretending to compute. Defaults are honest states (NOT_SEARCHED_OR_UNKNOWN, UNKNOWN_REQUIRES_REVIEW) rather than nulls. The synthetic flag is carried through both projections so demo data can never pass as real.",
+  tests: "Read test_tensor_projections.py: one test asserts both projections return the same source_id for the same record. Not run here (pytest/Streamlit env unverified on her machine) — and even passing would not prove the app correct, because View A must actually call this code, and §14 says it doesn't yet.",
+  concepts: "View as a function of data — derive, don't duplicate",
+  principles: "C · H"
+},
 {
   id: "s1", isExample: true, track: "startup", project: "KIN website",
   sessionDate: "2026-10-19", status: "verified",
@@ -53,6 +65,33 @@ sessions: [
 }
 ],
 concepts: [
+{
+  id: "c9", isExample: true, track: "both", language: "Python",
+  title: "View as a function of data — derive, don't duplicate",
+  sharedConcept: "Single source of truth — one canonical dataset, every display derived from it.",
+  codeExample: `from dataclasses import dataclass
+
+@dataclass
+class EvidenceTensor:
+    records: list
+
+    def project_gap(self):
+        return [{"target": r.get("target_name", "unknown"),
+                 "state": r.get("gap_state", "NOT_SEARCHED_OR_UNKNOWN"),
+                 "synthetic": r.get("synthetic", False)}
+                for r in self.records]
+
+    def project_proxy(self):
+        return [{"target": r.get("target_name", "unknown"),
+                 "observed": r.get("observed_name", "unknown"),
+                 "relation_class": r.get("relation_class", "UNKNOWN_REQUIRES_REVIEW"),
+                 "synthetic": r.get("synthetic", False)}
+                for r in self.records]`,
+  explanation: "Both methods read the same self.records and return different slices of it. A 'view' here is just a function: same input, deterministic output. Nothing is stored twice, so nothing can drift apart. The @dataclass adds nothing but a container — the design lives in the decision that there is exactly one records list.",
+  whyUse: "Whenever two screens, reports, or exports must agree: dashboards, maps, tables, exports. Derive each display from the canonical data at render time instead of syncing copies.",
+  mistake: "Letting each view query or build its own copy 'for performance' or convenience. Copies drift the moment one path changes — the Evidence Gap §14 bug is the textbook case: View A built its own unsearched matrix while View B read stored alignments, so the two maps told different stories and a passing unit test didn't catch it.",
+  connection: "Software construction (single source of truth, modularity) meets research validity (a gap map is only honest if every view reflects the same approval state). In pandas terms: keep one DataFrame and derive groupby views from it, never maintain two DataFrames by hand."
+},
 {
   id: "c1", isExample: true, track: "startup", language: "TypeScript",
   title: "Discriminated unions & narrowing",
@@ -226,6 +265,17 @@ resources: [
   note: "For when research work moves to Stata: command syntax, data management, and estimation references. Bookmark it now; you'll need it the first week a collaborator sends a .do file." }
 ],
 exercises: [
+{ id: "e7", isExample: true, track: "research", language: "Python", difficulty: "Core",
+  title: "What does project_gap return for an unsearched synthetic record?", conceptTitle: "View as a function of data — derive, don't duplicate",
+  problem: "A record has target 'savings', no gap_state, and synthetic=True. The app must show it on the Missing Evidence map without ever letting a reader mistake it for real evidence.",
+  task: "Write out exactly what project_gap() returns for this record (all five fields it includes), and in one sentence each say why the state default and the synthetic flag are the responsible choices for a research tool.",
+  hints: "Read project_gap field by field. What does .get(key, default) do when the key is absent? Which field is the one that stops demo data from passing as real?",
+  solution: `{'target': 'savings', 'population': 'unknown', 'state': 'NOT_SEARCHED_OR_UNKNOWN', 'source_id': None, 'synthetic': True}
+# population 'unknown' and source_id None are honest unknowns — invented
+# values would be worse. The state default says 'we have not searched this
+# yet' instead of implying 'no evidence exists' — absence of search is not
+# evidence of absence. synthetic=True rides along so the UI can badge it as
+# demo and exclude it from any real-evidence export.` },
 { id: "e1", isExample: true, track: "startup", language: "TypeScript", difficulty: "Core",
   title: "Spot the invalid state", conceptTitle: "Discriminated unions & narrowing",
   problem: "A teammate models a file upload as `{ status: string; progress?: number; error?: string; url?: string }`. Almost every combination of fields is nonsense — e.g. status 'done' with an error and no url.",
@@ -326,6 +376,15 @@ Report both, lead with the clustered result, and discuss
 effect size rather than the p-value alone.` }
 ],
 quiz: [
+{ id: "q9", isExample: true, track: "both", questionType: "Find the bug",
+  conceptTitle: "View as a function of data — derive, don't duplicate",
+  prompt: "View A (Missing Evidence) and View B (Proxy Alignment) show different source_ids for what should be the same record. The unit test for the tensor passes. What is the most likely cause?",
+  codeSnippet: `def test_both_projections_use_same_records():
+    tensor = EvidenceTensor([{"target": "savings", "observed": "accounts", "source_id": "s1"}])
+    assert tensor.project_gap()[0]["source_id"] == tensor.project_proxy()[0]["source_id"] == "s1"`,
+  options: ["The tensor's two methods read different record lists", "One view builds its own data instead of calling the shared tensor", "The test uses a synthetic record", "SQLite returned the rows in a different order"],
+  correctIndex: 1,
+  explanation: "The test only proves the tensor itself is consistent — both methods read self.records. It says nothing about whether the views actually use the tensor. If View A builds its own matrix (as §14 found), the app can disagree with itself while every unit test passes. Test passing is not system correct: the integration point (view → tensor) is what's untested." },
 { id: "q1", isExample: true, track: "startup", questionType: "Predict output",
   conceptTitle: "map / filter / reduce — transforming collections",
   prompt: "What does this print?",
@@ -423,15 +482,23 @@ const PRINCIPLES = [
 function blankState() { return { sessions: [], concepts: [], resources: [], exercises: [], quiz: [] }; }
 
 /* Replace surviving example cards with new seed content (same id).
+   New seed ids are added on top — unless the user deleted that id before.
    Deleted example cards stay deleted; user-added cards are untouched. */
 function migrateSeeds(s) {
+  const deleted = Array.isArray(s.deletedExampleIds) ? s.deletedExampleIds : [];
   for (const kind of Object.keys(SEED)) {
     if (!Array.isArray(SEED[kind])) continue;
     if (!Array.isArray(s[kind])) s[kind] = [];
+    const toAdd = [];
     for (const seed of SEED[kind]) {
       const i = s[kind].findIndex((x) => x.id === seed.id);
-      if (i >= 0 && s[kind][i].isExample) s[kind][i] = JSON.parse(JSON.stringify(seed));
+      if (i >= 0) {
+        if (s[kind][i].isExample) s[kind][i] = JSON.parse(JSON.stringify(seed));
+      } else if (!deleted.includes(seed.id)) {
+        toAdd.push(JSON.parse(JSON.stringify(seed)));
+      }
     }
+    if (toAdd.length) s[kind] = [...toAdd, ...s[kind]];
   }
   s.seedVersion = SEED_VERSION;
   try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) {}
