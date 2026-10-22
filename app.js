@@ -3,9 +3,17 @@
 
 const LS_KEY = "vibe-verify-v1";
 
+/* Seed updates: bump SEED_VERSION whenever SEED content changes. On load,
+   migrateSeeds() replaces example cards that still exist with the new seed
+   content (same id). It never resurrects cards the user deleted, and never
+   touches user-added cards. Brand-new seed ids are NOT auto-added — add
+   those via the in-app form. */
+const SEED_VERSION = 2;
+
 /* ---------------- seed data (tagged EXAMPLE, deletable) ---------------- */
 
 const SEED = {
+seedVersion: SEED_VERSION,
 sessions: [
 {
   id: "s1", isExample: true, track: "startup", project: "KIN website",
@@ -185,33 +193,33 @@ resources: [
   topic: "Software construction",
   note: "MIT's software-construction path: specifications, testing, abstraction, and code review — the closest formal match to 'how experienced engineers write code that lasts.'" },
 { id: "r3", isExample: true, track: "startup", kind: "Practitioner",
-  title: "Anthropic Engineering Blog", url: "https://www.anthropic.com/engineering",
+  title: "Anthropic — Effective context engineering for AI agents", url: "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents",
   topic: "AI systems engineering",
-  note: "Practitioner writing on building reliable AI systems — evals, agents, and context engineering. Read for how engineers reason about failure modes, not just results." },
+  note: "Read when an agent keeps forgetting things mid-task: give the model the smallest set of high-signal tokens, not more tokens." },
 { id: "r4", isExample: true, track: "research", kind: "Official docs",
-  title: "Python Documentation (3.x)", url: "https://docs.python.org/3/",
-  topic: "Python language reference",
-  note: "The source of truth for Python. Start with the Tutorial, then keep the Library Reference open while you work — learn to answer your own questions here first." },
+  title: "Python Tutorial — Data Structures", url: "https://docs.python.org/3/tutorial/datastructures.html",
+  topic: "Python language",
+  note: "One chapter, not the whole manual: lists, dicts, sets, comprehensions — read before writing data-processing code." },
 { id: "r5", isExample: true, track: "research", kind: "Official docs",
-  title: "pandas Documentation", url: "https://pandas.pydata.org/docs/",
+  title: "10 minutes to pandas", url: "https://pandas.pydata.org/docs/user_guide/10min.html",
   topic: "Data analysis in Python",
-  note: "User Guide for concepts (indexing, groupby, reshaping), API Reference for exact function behavior. The '10 minutes to pandas' page is the fastest orientation." },
+  note: "Ten minutes through Series / DataFrame basics — enough to start, then stop." },
 { id: "r6", isExample: true, track: "startup", kind: "Official docs",
-  title: "TypeScript Handbook", url: "https://www.typescriptlang.org/docs/handbook/intro.html",
+  title: "TypeScript Handbook — Narrowing", url: "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",
   topic: "TypeScript language",
-  note: "How the type system thinks: narrowing, generics, and structural typing. Read a section when a type error confuses you — the Handbook explains the 'why' behind the error." },
+  note: "Read when a type error confuses you: how typeof / instanceof narrow a type branch by branch." },
 { id: "r7", isExample: true, track: "startup", kind: "Official docs",
-  title: "MDN — JavaScript Guide & Reference", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
-  topic: "JavaScript language & web APIs",
-  note: "The reference for how JavaScript actually behaves — closures, promises, array methods, fetch. When AI-generated JS surprises you, check the exact semantics here." },
+  title: "MDN — Closures", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures",
+  topic: "JavaScript language",
+  note: "Read when a function forgets its outer variables: a closure is a function plus the lexical environment it was born in." },
 { id: "r8", isExample: true, track: "startup", kind: "Official docs",
-  title: "Git Documentation & Pro Git Book", url: "https://git-scm.com/doc",
+  title: "Pro Git — Branches in a Nutshell", url: "https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell",
   topic: "Version control",
-  note: "Pro Git (free, linked from this page) explains the object model — once you understand commits as snapshots, branching and rebasing stop being magic." },
+  note: "Commits are snapshots, a branch is just a pointer — once that clicks, branching stops being magic." },
 { id: "r9", isExample: true, track: "research", kind: "Official docs",
-  title: "NumPy Documentation", url: "https://numpy.org/doc/",
+  title: "NumPy — Absolute beginners", url: "https://numpy.org/doc/stable/user/absolute_beginners.html",
   topic: "Numerical computing in Python",
-  note: "Arrays, broadcasting, and vectorized operations — the foundation under pandas and most research code. Understanding broadcasting explains half of all shape errors." },
+  note: "Arrays and broadcasting, one tutorial page — understanding broadcasting explains half of all shape errors." },
 { id: "r10", isExample: true, track: "research", kind: "Official docs",
   title: "Stata Documentation", url: "https://www.stata.com/features/documentation/",
   topic: "Stata reference",
@@ -414,6 +422,21 @@ const PRINCIPLES = [
 
 function blankState() { return { sessions: [], concepts: [], resources: [], exercises: [], quiz: [] }; }
 
+/* Replace surviving example cards with new seed content (same id).
+   Deleted example cards stay deleted; user-added cards are untouched. */
+function migrateSeeds(s) {
+  for (const kind of Object.keys(SEED)) {
+    if (!Array.isArray(SEED[kind])) continue;
+    if (!Array.isArray(s[kind])) s[kind] = [];
+    for (const seed of SEED[kind]) {
+      const i = s[kind].findIndex((x) => x.id === seed.id);
+      if (i >= 0 && s[kind][i].isExample) s[kind][i] = JSON.parse(JSON.stringify(seed));
+    }
+  }
+  s.seedVersion = SEED_VERSION;
+  try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) {}
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -421,6 +444,7 @@ function loadState() {
       const s = JSON.parse(raw);
       const b = blankState();
       for (const k of Object.keys(b)) if (!Array.isArray(s[k])) s[k] = [];
+      if ((s.seedVersion || 0) < SEED_VERSION) migrateSeeds(s);
       return s;
     }
   } catch (e) {}
@@ -445,6 +469,12 @@ let trackF = "all";
 const answered = {};   // quiz answers live in memory only — nothing to keep
 
 function del(kind, id) {
+  const victim = S[kind].find((x) => x.id === id);
+  if (victim && victim.isExample) {
+    // Remember deleted example ids so a future migration never resurrects them.
+    if (!Array.isArray(S.deletedExampleIds)) S.deletedExampleIds = [];
+    if (!S.deletedExampleIds.includes(id)) S.deletedExampleIds.push(id);
+  }
   S[kind] = S[kind].filter((x) => x.id !== id);
   persist(); render();
 }
